@@ -1,18 +1,14 @@
-from numpy.core.numeric import False_
 import tensorflow as tf
-from tensorflow.keras import layers, Input, Model, losses
+from tensorflow.keras import losses
 import matplotlib.pyplot as plt
-from keras.datasets import mnist
 import numpy as np
 import tensorflow.keras.backend as K
-from tensorflow.keras.models import load_model
 from tensorflow import keras
 import os
 from pathlib import Path
-from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from custon_data_generator import CustomDataGenerator
+from datetime import datetime
+from create_model import create_model
 
 def load_data(path):
     data = []
@@ -59,33 +55,12 @@ def generate_report(cwd, encoder, decoder, conv_vae):
     conv_vae.save(cwd+'/conv_vae')     
 
 
-def sampling(args):
-    z_mean, z_log_sigma = args
-    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], latent_dim),
-                              mean=0., stddev=0.1)
-    return z_mean + K.exp(z_log_sigma) * epsilon
 
 
 if __name__ == '__main__':
     
     print('start loading data')    
     data = load_data('SeminarAF')
-    # data = load_data('spectrogram_train/spectrogram')
-    
-    
-    # train_datagen = ImageDataGenerator()
-    # train_generator = train_datagen.flow_from_directory(
-    #     'spectrogram_train',
-    #     target_size = (75, 80, 1),
-    #     batch_size = 32
-    #     )
-
-    # test_datagen = ImageDataGenerator()
-    # test_generator = test_datagen.flow_from_directory(
-    #     'spectrogram_test',
-    #     target_size = (75, 80, 1),
-    #     batch_size = 32
-    #     )
 
     print('data loaded')
     data_len = len(data)
@@ -98,17 +73,11 @@ if __name__ == '__main__':
     x_test = np.reshape(x_test, (len(x_test), 75, 80, 1))
 
     path = 'spectrogram_models/'
-    # version = int(sorted([dir.split('v')[1] for dir in os.listdir(path)])[-1]) + 1
-    num = []
-    for dir in os.listdir(path):
-        if len(dir.split('v')) ==2:
-            num.append(int(dir.split('v')[1]))
-    version = sorted(num)[-1] + 1
-
-    cwd = path+'v'+str(version)
+    now = datetime.now()
+    cwd = path+now.strftime("%Y-%m-%D_%H-%M-%S")
     Path(cwd).mkdir()
     opt = 'adam'
-    epochs = 20
+    epochs = 50
     batch_size = 128
     validation_split = 0.1
     early_stopping = True
@@ -119,49 +88,12 @@ if __name__ == '__main__':
     annealing = True
     klstart = 2
     kl_annealtime = 3
-    latent_dim = 20
+    latent_dim = 30
 
 
     print("start creating the model")
-    encoder_inp = Input(shape=(75, 80, 1))
-    x = layers.Conv2D(32, (3, 2), strides=(1,1), activation='relu')(encoder_inp)
-    x = layers.MaxPool2D()(x)
-    x = layers.Conv2D(64, (3, 2), activation="relu", strides=(2,2))(x)
-    x = layers.MaxPool2D()(x)
-    x = layers.Conv2D(128, (3, 3), activation="relu", strides=(2,2))(x)
-    x = layers.Conv2D(256, (3, 3), activation="relu", strides=(2,2))(x)
-    x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Flatten()(x)
-    x = layers.Dense(100, activation='relu')(x)
-    z_mean = layers.Dense(latent_dim)(x)
-    z_log_sigma = layers.Dense(latent_dim)(x)
-    z = layers.Lambda(sampling)([z_mean, z_log_sigma])
-    encoder = Model(encoder_inp, [z_mean, z_log_sigma, z], name='encoder')
-    print(encoder.summary())
 
-    latent_inputs = Input(shape=(latent_dim,))
-    y = layers.Dense(100, activation='relu')(latent_inputs)
-    y = layers.Dense(8*9*8, activation='relu')(y)
-    y = layers.Reshape((8, 9, 8))(y)
-    y = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), activation='relu')(y)
-    y = layers.Conv2DTranspose(128, (3, 3), strides=(2, 2), activation='relu')(y)
-    # y = layers.BatchNormalization()(y)
-    y = layers.Conv2DTranspose(64, (3, 2), strides=(2, 2), activation='relu')(y)
-    # y = layers.UpSampling2D()(y)
-    # y = layers.BatchNormalization()(y)
-    y = layers.Conv2DTranspose(32, (3, 2), strides=(1, 1) ,activation='relu')(y)
-    # y = layers.UpSampling2D()(y)
-    # y = layers.BatchNormalization()(y)
-    y = layers.Conv2DTranspose(1, (3, 2), activation='tanh')(y)
-    decoded = layers.Lambda((lambda x: x*5))(y)
-    decoder = Model(latent_inputs, decoded)
-    print(decoder.summary())
-
-    conv_vae = Model(encoder_inp, decoder(encoder(encoder_inp)[2]))
-
-
-    reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
-    conv_vae.add_loss(reconstruction_loss)
+    conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
 
     class AnnealingCallback(Callback):
         def __init__(self, weight):
@@ -174,11 +106,11 @@ if __name__ == '__main__':
 
     weight = K.variable(0.)
 
+    reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
+
     kl_loss = 1 + z_log_sigma - tf.square(z_mean) - tf.exp(z_log_sigma)
     kl_loss = -0.5*tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-    # conv_vae_loss = K.mean(kl_loss + reconstruction_loss)
-    # conv_vae.add_loss(conv_vae_loss)
-    conv_vae.add_loss(kl_loss)
+    
     conv_vae.compile(optimizer=opt)
 
     print("model compiled", conv_vae)
@@ -188,16 +120,19 @@ if __name__ == '__main__':
                                         baseline=None, restore_best_weights=True)
     if not early_stopping:
         callback_early_stopping = None
-    if not annealing:
-        annealing_callback = None
-    else:
-        annealing_callback = AnnealingCallback(weight)
-    
+
     print("start training the model")
 
-    # conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
-    conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, batch_size=batch_size)
-    # conv_vae.fit(train_generator, train_generator, epochs, batch_size)
+    if not annealing:
+        conv_vae_loss = K.mean(kl_loss + reconstruction_loss)
+        conv_vae.add_loss(conv_vae_loss)
+        conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping], batch_size=batch_size)
+    else:
+        conv_vae.add_loss(reconstruction_loss)
+        conv_vae.add_loss(kl_loss)
+        annealing_callback = AnnealingCallback(weight)
+        conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
+    
     
     print("write report")
     generate_report(cwd, encoder, decoder, conv_vae)
@@ -215,16 +150,13 @@ if __name__ == '__main__':
 
         ax = plt.subplot(2, n, i+n+1)
         plt.imshow(x_pred[i][:,:,0])
-        # plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
     plt.savefig(cwd+'/prediction')
-    # plt.show()
 
     mu, log_sigma, _ = encoder.predict(x_test)
     plt.figure(figsize=(10,10))
     plt.scatter(mu[:, 0], mu[:, 1], cmap='plasma')
     plt.colorbar()
     plt.savefig(cwd+'/mu scatter plot')
-    # plt.show()
