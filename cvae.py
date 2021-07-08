@@ -60,7 +60,7 @@ def generate_report(cwd, encoder, decoder, conv_vae):
 if __name__ == '__main__':
     
     print('start loading data')    
-    data = load_data('SeminarAF')
+    data = load_data('../SeminarAF')
 
     print('data loaded')
     data_len = len(data)
