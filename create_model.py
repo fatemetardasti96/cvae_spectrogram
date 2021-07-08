@@ -22,7 +22,7 @@ def create_model(latent_dim):
     x = layers.Dense(100, activation='relu')(x)
     z_mean = layers.Dense(latent_dim)(x)
     z_log_sigma = layers.Dense(latent_dim)(x)
-    z = layers.Lambda(sampling)([z_mean, z_log_sigma])
+    z = layers.Lambda(sampling)([z_mean, z_log_sigma, latent_dim])
     encoder = Model(encoder_inp, [z_mean, z_log_sigma, z], name='encoder')
     encoder.summary()
 
