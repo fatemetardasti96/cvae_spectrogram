@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     path = 'spectrogram_models/'
     now = datetime.now()
-    cwd = path+now.strftime("%Y-%m-%D_%H-%M-%S")
+    cwd = path+now.strftime("%Y-%m-%d_%H-%M-%S")
     Path(cwd).mkdir()
     opt = 'adam'
     epochs = 50
