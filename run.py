@@ -54,7 +54,7 @@ if __name__ == '__main__':
                         help="latent dimension size")
     parser.add_argument("--batch-size", type=int, default=32,
                         help="nb batch size")
-    parser.add_argument("--nb-epohcs", type=int, default=20,
+    parser.add_argument("--nb-epochs", type=int, default=20,
                         help="nb epochs")
     parser.add_argument("--kernel-size", type=int, default=3,
                         help="kernel size")
