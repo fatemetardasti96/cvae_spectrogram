@@ -28,13 +28,13 @@ def generate_report(cwd, encoder, decoder, conv_vae):
         f.write('validation split: {}\n'.format(validation_split))
         f.write('train data shape: {}\n'.format(x_train.shape))
         f.write('test data shape: {}\n'.format(x_test.shape))
-        f.write('min value of data: {}\n'.format(min(data.flatten())))
-        f.write('max value of data: {}\n'.format(max(data.flatten())))
+        # f.write('min value of data: {}\n'.format(min(data.flatten())))
+        # f.write('max value of data: {}\n'.format(max(data.flatten())))
         f.write('call back early stopping: {}\n'.format(early_stopping))
         if early_stopping:
             f.write('call back monitor: {}\n'.format(monitor))
             f.write('call back min delta: {}\n'.format(min_delta))
-            f.write('call back mode: {}\n'.format(mode))
+            # f.write('call back mode: {}\n'.format(mode))
             f.write('call back patience: {}\n'.format(patience))
         if annealing:
             f.write('starting epoch for annealing: {}\n'.format(klstart))
