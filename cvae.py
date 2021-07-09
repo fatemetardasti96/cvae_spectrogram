@@ -69,7 +69,8 @@ def sampling(args):
 if __name__ == '__main__':
     
     print('start loading data')    
-    data = load_data('../SeminarAF')
+    # data = load_data('../SeminarAF')
+    data = load_data('../sample_spectrogram')
 
     print('data loaded')
     data_len = len(data)
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     cwd = path+now.strftime("%Y-%m-%d_%H-%M-%S")
     Path(cwd).mkdir()
     opt = 'adam'
-    epochs = 2
+    epochs = 40
     batch_size = 128
     validation_split = 0.1
     early_stopping = True
@@ -103,36 +104,7 @@ if __name__ == '__main__':
     print("start creating the model")
 
     # conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
-    encoder_inp = Input(shape=(75, 80, 1))
-    x = layers.Conv2D(64, (3, 2), strides=(1,1), activation='relu')(encoder_inp)
-    x = layers.MaxPool2D()(x)
-    x = layers.Conv2D(128, (3, 2), activation="relu", strides=(2,2))(x)
-    x = layers.MaxPool2D()(x)
-    x = layers.Conv2D(256, (3, 3), activation="relu", strides=(2,2))(x)
-    x = layers.Conv2D(256, (3, 3), activation="relu", strides=(2,2))(x)
-    x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Flatten()(x)
-    x = layers.Dense(100, activation='relu')(x)
-    z_mean = layers.Dense(latent_dim)(x)
-    z_log_sigma = layers.Dense(latent_dim)(x)
-    z = layers.Lambda(sampling)([z_mean, z_log_sigma, latent_dim])
-    encoder = Model(encoder_inp, [z_mean, z_log_sigma, z], name='encoder')
-    encoder.summary()
-
-    latent_inputs = Input(shape=(latent_dim,))
-    y = layers.Dense(100, activation='relu')(latent_inputs)
-    y = layers.Dense(8*9*8, activation='relu')(y)
-    y = layers.Reshape((8, 9, 8))(y)
-    y = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), activation='relu')(y)
-    y = layers.Conv2DTranspose(256, (3, 3), strides=(2, 2), activation='relu')(y)
-    y = layers.Conv2DTranspose(128, (3, 2), strides=(2, 2), activation='relu')(y)
-    y = layers.Conv2DTranspose(64, (3, 2), strides=(1, 1) ,activation='relu')(y)
-    y = layers.Conv2DTranspose(1, (3, 2), activation='tanh')(y)
-    decoded = layers.Lambda((lambda x: x*5))(y)
-    decoder = Model(latent_inputs, decoded)
-    decoder.summary()
-
-    conv_vae = Model(encoder_inp, decoder(encoder(encoder_inp)[2]))
+    conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
 
     class AnnealingCallback(Callback):
         def __init__(self, weight):
@@ -146,14 +118,9 @@ if __name__ == '__main__':
     weight = K.variable(0.)
 
     reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
-
     kl_loss = 1 + z_log_sigma - tf.square(z_mean) - tf.exp(z_log_sigma)
     kl_loss = -0.5*tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
     
-    conv_vae.compile(optimizer=opt)
-
-    print("model compiled", conv_vae)
-
     callback_early_stopping = keras.callbacks.EarlyStopping(monitor=monitor, min_delta=min_delta,
                                         patience=patience, verbose=0, mode=mode,
                                         baseline=None, restore_best_weights=True)
@@ -165,11 +132,13 @@ if __name__ == '__main__':
     if not annealing:
         conv_vae_loss = K.mean(kl_loss + reconstruction_loss)
         conv_vae.add_loss(conv_vae_loss)
+        conv_vae.compile(optimizer=opt)
         conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping], batch_size=batch_size)
     else:
         conv_vae.add_loss(reconstruction_loss)
         conv_vae.add_loss(kl_loss)
         annealing_callback = AnnealingCallback(weight)
+        conv_vae.compile(optimizer=opt)
         conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
     
     
