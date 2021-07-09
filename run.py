@@ -5,7 +5,7 @@ import argparse
 
 from load_data import load_data
 from visualization import plot_result
-
+from build_model import build_model
 
 
 def generate_report(cwd, encoder, decoder, conv_vae):
@@ -115,6 +115,8 @@ if __name__ == '__main__':
 
     conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
 
+    build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
+    validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train, cwd)
     
     
     print("write report")

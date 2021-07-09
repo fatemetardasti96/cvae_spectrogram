@@ -21,7 +21,7 @@ class AnnealingCallback(Callback):
 
 
 def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
-    validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train):
+    validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train, cwd):
 
     weight = K.variable(0.)
     reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
@@ -48,3 +48,5 @@ def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, mon
         conv_vae.compile(optimizer=opt)
         conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
     
+    conv_vae.save(cwd + '/vae_cnn_spec.h5')
+    return conv_vae
