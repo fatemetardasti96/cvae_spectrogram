@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def plot_result(encoder, conv_vae, x_test, cwd):
     x_pred = conv_vae.predict(x_test)
-    n = 10
+    n = 20
     plt.figure(figsize=(35,5))
     for i in range(n):
         ax = plt.subplot(2, n, i+1)

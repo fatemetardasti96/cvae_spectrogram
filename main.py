@@ -1,47 +1,19 @@
 from pathlib import Path
 from datetime import datetime
-from create_model import create_model
 import argparse
 
 from load_data import load_data
 from visualization import plot_result
 from build_model import build_model
+from apply_reshaping import apply_reshaping
+from create_model import create_model_flexible, create_model_rigid
+from generate_report import generate_report
 
 
-def generate_report(cwd, encoder, decoder, conv_vae):
-    encoder.save(cwd+'/encoder')
-    with open(cwd+'/encoder_summary.txt', 'w') as f:
-        encoder.summary(print_fn=lambda x: f.write(x + '\n'))
-
-    decoder.save(cwd+'/decoder')
-    with open(cwd+'/decoder_summary.txt', 'w') as f:
-        decoder.summary(print_fn=lambda x: f.write(x + '\n'))
-
-    with open(cwd+'/vae_summary.txt', 'w') as f:
-        conv_vae.summary(print_fn=lambda x: f.write(x + '\n'))
-
-    with open(cwd+'/parameter_summary.txt', 'w') as f:
-        f.write('optimizer: {}\n'.format(opt))
-        f.write('latent dim: {}\n'.format(latent_dim))
-        f.write('nb epochs: {}\n'.format(epochs))
-        f.write('batch size: {}\n'.format(batch_size))
-        f.write('validation split: {}\n'.format(validation_split))
-        f.write('train data shape: {}\n'.format(x_train.shape))
-        f.write('test data shape: {}\n'.format(x_test.shape))
-        # f.write('min value of data: {}\n'.format(min(data.flatten())))
-        # f.write('max value of data: {}\n'.format(max(data.flatten())))
-        f.write('call back early stopping: {}\n'.format(early_stopping))
-        if early_stopping:
-            f.write('call back monitor: {}\n'.format(monitor))
-            f.write('call back min delta: {}\n'.format(min_delta))
-            # f.write('call back mode: {}\n'.format(mode))
-            f.write('call back patience: {}\n'.format(patience))
-        if annealing:
-            f.write('starting epoch for annealing: {}\n'.format(klstart))
-            f.write('increasing step for annealing: {}\n'.format(kl_annealtime))
-
-    conv_vae.save(cwd+'/conv_vae')     
-
+def tuple_type(strings):
+    strings = strings.replace("(", "").replace(")", "")
+    mapped_int = map(int, strings.split(","))
+    return tuple(mapped_int)
 
 
 if __name__ == '__main__':
@@ -60,6 +32,10 @@ if __name__ == '__main__':
                         help="kernel size")
     parser.add_argument("--filter-size", type=int, default=16,
                         help="initial filter size")
+    parser.add_argument("--strides", type=int, default=2,
+                        help="stride size")
+    parser.add_argument("--nb-layer", type=int, default=3,
+                        help="number of layers in VAE model")
     parser.add_argument("--validation-split", type=float, default=0.1,
                         help="validation split in fitting step")
     parser.add_argument("--opt", type=str, default="adam",
@@ -78,6 +54,9 @@ if __name__ == '__main__':
                         help="start annealing after klstart epochs")
     parser.add_argument("--kl-annealtime", type=int, default=2,
                         help="growing weight for kl loss")
+    parser.add_argument("--input-shape", type=tuple_type, default=(75, 80),
+                        help="if different from default then should apply reshaping")
+
 
     args = parser.parse_args()
     
@@ -85,6 +64,8 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     kernel_size = args.kernel_size
     filters = args.filter_size
+    strides = args.strides
+    num_layers = args.nb_layer
     latent_dim = args.latent_dim
     epochs = args.nb_epochs
     validation_split = args.validation_split
@@ -96,11 +77,14 @@ if __name__ == '__main__':
     annealing = args.annealing
     klstart = args.klstart
     kl_annealtime = args.kl_annealtime
+    input_shape = args.input_shape
 
     
     print('start loading data')    
-    # x_train, x_test = load_data('../sample_spectrogram')
     x_train, x_test = load_data(data_path_name)
+
+    if input_shape != (75, 80):
+        x_train, x_test = apply_reshaping(x_train, x_test, input_shape)
 
     print('data loaded')
 
@@ -113,14 +97,18 @@ if __name__ == '__main__':
 
     print("start creating the model")
 
-    conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
+    # conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
+    input_shape = (input_shape[0], input_shape[1], 1)
+    conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model_rigid(input_shape, filters, kernel_size,\
+         strides, latent_dim, num_layers)
 
     build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
     validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train, cwd)
     
     
     print("write report")
-    generate_report(cwd, encoder, decoder, conv_vae)
+    generate_report(cwd, encoder, decoder, conv_vae, opt, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+    monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape)
 
     print("plot results")
     plot_result(encoder, conv_vae, x_test, cwd)

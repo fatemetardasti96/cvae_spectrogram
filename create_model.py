@@ -9,7 +9,7 @@ def sampling(args):
 
 
 
-def create_model(latent_dim):    
+def create_model_flexible(latent_dim):    
     encoder_inp = Input(shape=(75, 80, 1))
     x = layers.Conv2D(64, (3, 2), strides=(1,1), activation='relu')(encoder_inp)
     x = layers.MaxPool2D()(x)
@@ -42,3 +42,46 @@ def create_model(latent_dim):
     conv_vae = Model(encoder_inp, decoder(encoder(encoder_inp)[2]))
 
     return conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp
+
+
+
+def create_model_rigid(input_shape, filters, kernel_size, strides, latent_dim, num_layers):
+
+    inputs = Input(shape=input_shape, name='encoder_input')
+    x = inputs
+    for i in range(num_layers):
+        filters *= 2
+        x = layers.Conv2D(filters=filters, 
+            kernel_size=kernel_size, 
+            strides=strides, 
+            activation='relu', 
+            padding='same')(x)
+
+    shape = K.int_shape(x)
+
+    x = layers.GlobalAveragePooling2D()(x)    
+    x = layers.Flatten()(x)
+    x = layers.Dense(100, activation='relu')(x)
+    z_mean = layers.Dense(latent_dim)(x)
+    z_log_sigma = layers.Dense(latent_dim)(x)
+
+    z = layers.Lambda(sampling)([z_mean, z_log_sigma, latent_dim])
+    
+    encoder = Model(inputs, [z_mean, z_log_sigma, z], name='encoder')
+    
+    
+    latent_inputs = Input(shape=(latent_dim,))
+    y = layers.Dense(shape[1] * shape[2] * shape[3], activation='relu')(latent_inputs)
+    y = layers.Reshape((shape[1], shape[2], shape[3]))(y)
+    for i in range(num_layers):
+        y = layers.Conv2DTranspose(filters, kernel_size, strides, activation='relu', padding='same')(y)
+
+        filters /= 2
+
+    y = layers.Conv2DTranspose(filters=1, kernel_size=1, activation='tanh')(y)
+    outputs = layers.Lambda((lambda x: x*5))(y)
+    decoder = Model(latent_inputs, outputs)
+
+    conv_vae = Model(inputs, decoder(encoder(inputs)[2]))
+
+    return conv_vae, encoder, decoder, z_mean, z_log_sigma, inputs
