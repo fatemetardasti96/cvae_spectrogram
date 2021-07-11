@@ -44,6 +44,8 @@ if __name__ == '__main__':
                         help="monitor parameter for early stopping val_loss or loss")                        
     parser.add_argument("--min-delta", type=float, default=0.0001,
                         help="min delta in early stopping")
+    parser.add_argument("--learning-rate", type=float, default=0.001,
+                        help="learning rate")
     parser.add_argument("--patience", type=int, default=3,
                         help="patience in raly stopping")
     parser.add_argument("--early-stopping", type=bool, default=True,
@@ -70,6 +72,7 @@ if __name__ == '__main__':
     epochs = args.nb_epochs
     validation_split = args.validation_split
     opt = args.opt
+    learning_rate = args.learning_rate
     monitor = args.monitor
     min_delta = args.min_delta
     patience = args.patience
@@ -103,11 +106,11 @@ if __name__ == '__main__':
          strides, latent_dim, num_layers)
 
     build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
-    validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train, cwd)
+    validation_split, epochs, batch_size, opt, learning_rate, early_stopping, annealing, x_train, cwd)
     
     
     print("write report")
-    generate_report(cwd, encoder, decoder, conv_vae, opt, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+    generate_report(cwd, encoder, decoder, conv_vae, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape)
 
     print("plot results")

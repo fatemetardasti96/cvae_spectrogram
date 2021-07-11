@@ -21,7 +21,7 @@ class AnnealingCallback(Callback):
 
 
 def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
-    validation_split, epochs, batch_size, opt, early_stopping, annealing, x_train, cwd):
+    validation_split, epochs, batch_size, opt, learning_rate, early_stopping, annealing, x_train, cwd):
 
     weight = K.variable(0.)
     reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
@@ -35,7 +35,7 @@ def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, mon
         callback_early_stopping = None
 
     print("start training the model")
-
+    opt = keras.optimizers.Adam(learning_rate)
     if not annealing:
         conv_vae_loss = K.mean(kl_loss + reconstruction_loss)
         conv_vae.add_loss(conv_vae_loss)

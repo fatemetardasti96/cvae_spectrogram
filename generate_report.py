@@ -1,4 +1,4 @@
-def generate_report(cwd, encoder, decoder, conv_vae, opt, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+def generate_report(cwd, encoder, decoder, conv_vae, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape):
     encoder.save(cwd+'/encoder')
     with open(cwd+'/encoder_summary.txt', 'w') as f:
@@ -13,6 +13,7 @@ def generate_report(cwd, encoder, decoder, conv_vae, opt, latent_dim, epochs, ba
 
     with open(cwd+'/parameter_summary.txt', 'w') as f:
         f.write('optimizer: {}\n'.format(opt))
+        f.write('learning rate: {}\n'.format(learning_rate))
         f.write('latent dim: {}\n'.format(latent_dim))
         f.write('nb epochs: {}\n'.format(epochs))
         f.write('batch size: {}\n'.format(batch_size))
