@@ -110,7 +110,7 @@ if __name__ == '__main__':
     
     
     print("write report")
-    generate_report(cwd, encoder, decoder, conv_vae, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+    generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape)
 
     print("plot results")

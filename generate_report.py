@@ -1,4 +1,4 @@
-def generate_report(cwd, encoder, decoder, conv_vae, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+def generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape):
     encoder.save(cwd+'/encoder')
     with open(cwd+'/encoder_summary.txt', 'w') as f:
@@ -12,16 +12,41 @@ def generate_report(cwd, encoder, decoder, conv_vae, opt, learning_rate, latent_
         conv_vae.summary(print_fn=lambda x: f.write(x + '\n'))
 
     with open(cwd+'/parameter_summary.txt', 'w') as f:
-        f.write('optimizer: {}\n'.format(opt))
-        f.write('learning rate: {}\n'.format(learning_rate))
-        f.write('latent dim: {}\n'.format(latent_dim))
-        f.write('nb epochs: {}\n'.format(epochs))
-        f.write('batch size: {}\n'.format(batch_size))
-        f.write('validation split: {}\n'.format(validation_split))
-        f.write('train data shape: {}\n'.format(x_train.shape))
-        f.write('test data shape: {}\n'.format(x_test.shape))
-        f.write('resize input data: {}\n'.format(input_shape))
-        f.write('call back early stopping: {}\n'.format(early_stopping))
+        f.write(
+            """
+            batch_size = {}
+            kernel_size = {}
+            filters = {}
+            strides = {}
+            num_layers = {}
+            latent_dim = {}
+            epochs = {}
+            validation_split = {}
+            opt = {}
+            learning_rate = {}            
+            early_stopping = {}
+            annealing = {}
+            input_shape = {}
+            train data shape = {}
+            test data shape = {}
+            """.format(
+                batch_size,
+                kernel_size,
+                filters,
+                strides,
+                num_layers,
+                latent_dim,
+                epochs,
+                validation_split, 
+                opt,
+                learning_rate,
+                early_stopping,
+                annealing,
+                input_shape,
+                x_train.shape,
+                x_test.shape
+            )
+        )
         if early_stopping:
             f.write('call back monitor: {}\n'.format(monitor))
             f.write('call back min delta: {}\n'.format(min_delta))
