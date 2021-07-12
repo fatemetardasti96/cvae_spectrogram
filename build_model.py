@@ -40,13 +40,13 @@ def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, mon
         conv_vae_loss = K.mean(kl_loss + reconstruction_loss)
         conv_vae.add_loss(conv_vae_loss)
         conv_vae.compile(optimizer=opt)
-        conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping], batch_size=batch_size)
+        history = conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping], batch_size=batch_size)
     else:
         conv_vae.add_loss(reconstruction_loss)
         conv_vae.add_loss(kl_loss)
         annealing_callback = AnnealingCallback(weight, klstart, kl_annealtime)
         conv_vae.compile(optimizer=opt)
-        conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
+        history = conv_vae.fit(x_train, x_train, validation_split=validation_split, epochs=epochs, callbacks=[callback_early_stopping, annealing_callback], batch_size=batch_size)
     
     conv_vae.save(cwd + '/vae_cnn_spec.h5')
-    return conv_vae
+    return conv_vae, history
