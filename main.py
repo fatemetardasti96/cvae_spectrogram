@@ -50,9 +50,9 @@ if __name__ == '__main__':
                         help="learning rate")
     parser.add_argument("--patience", type=int, default=3,
                         help="patience in raly stopping")
-    parser.add_argument("--early-stopping", type=bool, default=True,
+    parser.add_argument("--early-stopping", type=int, default=True,
                         help="stop the model if monitor value grows")
-    parser.add_argument("--annealing", type=bool, default=True,
+    parser.add_argument("--annealing", type=int, default=True,
                         help="apply kl loss annealing (0/1)")
     parser.add_argument("--klstart", type=int, default=2,
                         help="start annealing after klstart epochs")
@@ -60,10 +60,12 @@ if __name__ == '__main__':
                         help="growing weight for kl loss")
     parser.add_argument("--input-shape", type=tuple_type, default=(75, 80),
                         help="if different from default then should apply reshaping")
-    parser.add_argument("--random", type=bool, default=False,
+    parser.add_argument("--random", type=int, default=False,
                         help="generate random or fixed train and test data (0/1)")
     parser.add_argument("--fcl", type=int, default=100,
                         help="nb units in dense layer")
+    parser.add_argument("--loss", type=str, default='mse',
+                        help="loss function in reconstruction loss")
 
 
     args = parser.parse_args()
@@ -89,6 +91,7 @@ if __name__ == '__main__':
     input_shape = args.input_shape
     random = args.random == 1
     fcl = args.fcl
+    loss = args.loss
 
     
     print('start loading data')    
@@ -113,12 +116,12 @@ if __name__ == '__main__':
     conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model_rigid(input_shape, filters, kernel_size,\
          strides, latent_dim,fcl, num_layers)
 
-    conv_vae, history = build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
+    conv_vae, history = build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, loss, monitor, min_delta, patience, klstart, kl_annealtime, \
     validation_split, epochs, batch_size, opt, learning_rate, early_stopping, annealing, x_train, cwd)
     
     
     print("write report")
-    generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, fcl, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+    generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, fcl, loss, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape)
 
     print("plot results")

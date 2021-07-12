@@ -20,11 +20,17 @@ class AnnealingCallback(Callback):
 
 
 
-def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
+def build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, loss, monitor, min_delta, patience, klstart, kl_annealtime, \
     validation_split, epochs, batch_size, opt, learning_rate, early_stopping, annealing, x_train, cwd):
 
     weight = K.variable(0.)
-    reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
+    if loss == 'mse':
+        reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_squared_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
+    elif loss == 'mae':
+        reconstruction_loss = tf.reduce_mean(tf.reduce_sum(losses.mean_absolute_error(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
+    elif loss == 'ssim':
+        reconstruction_loss = tf.reduce_mean(tf.reduce_sum(tf.image.ssim(encoder_inp, decoder(encoder(encoder_inp)[2])),axis=(1,2)))
+
     kl_loss = 1 + z_log_sigma - tf.square(z_mean) - tf.exp(z_log_sigma)
     kl_loss = -0.5*tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
     
