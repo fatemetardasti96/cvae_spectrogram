@@ -60,7 +60,7 @@ if __name__ == '__main__':
                         help="growing weight for kl loss")
     parser.add_argument("--input-shape", type=tuple_type, default=(75, 80),
                         help="if different from default then should apply reshaping")
-    parser.add_argument("--random", type=bool, default=True,
+    parser.add_argument("--random", type=bool, default=False,
                         help="generate random or fixed train and test data (0/1)")
 
 
@@ -80,16 +80,16 @@ if __name__ == '__main__':
     monitor = args.monitor
     min_delta = args.min_delta
     patience = args.patience
-    early_stopping = args.early_stopping
-    annealing = args.annealing
+    early_stopping = args.early_stopping == 1
+    annealing = args.annealing == 1
     klstart = args.klstart
     kl_annealtime = args.kl_annealtime
     input_shape = args.input_shape
-    random = args.random
+    random = args.random == 1
 
     
     print('start loading data')    
-    x_train, x_test = load_data(data_path_name, random=True)
+    x_train, x_test = load_data(data_path_name, random)
 
     if input_shape != (75, 80):
         x_train, x_test = apply_reshaping(x_train, x_test, input_shape)
