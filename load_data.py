@@ -2,7 +2,7 @@ import os
 import numpy as np
 import os
 
-def load_data(path):
+def load_data(path, random):
     data = []
     for file in os.listdir(path):
         temp_data = np.load(os.path.join(path, file))
@@ -13,7 +13,10 @@ def load_data(path):
 
     data_len = len(data)
     test_size = round(data_len*0.25)
-    index = np.random.permutation(data_len)
+    if random:
+        index = np.random.permutation(data_len)
+    else:
+        index = np.arange(data_len)
     normalized_data = data/np.max(np.abs(data), axis=0)
     x_test = normalized_data[index[:test_size]]
     x_train = normalized_data[index[test_size:]]

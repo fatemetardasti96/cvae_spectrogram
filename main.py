@@ -2,6 +2,8 @@ from pathlib import Path
 from datetime import datetime
 import argparse
 
+from numpy import random
+
 from load_data import load_data
 from visualization import plot_result
 from build_model import build_model
@@ -58,6 +60,8 @@ if __name__ == '__main__':
                         help="growing weight for kl loss")
     parser.add_argument("--input-shape", type=tuple_type, default=(75, 80),
                         help="if different from default then should apply reshaping")
+    parser.add_argument("--random", type=bool, default=True,
+                        help="generate random or fixed train and test data (0/1)")
 
 
     args = parser.parse_args()
@@ -81,10 +85,11 @@ if __name__ == '__main__':
     klstart = args.klstart
     kl_annealtime = args.kl_annealtime
     input_shape = args.input_shape
+    random = args.random
 
     
     print('start loading data')    
-    x_train, x_test = load_data(data_path_name)
+    x_train, x_test = load_data(data_path_name, random=True)
 
     if input_shape != (75, 80):
         x_train, x_test = apply_reshaping(x_train, x_test, input_shape)
