@@ -62,6 +62,8 @@ if __name__ == '__main__':
                         help="if different from default then should apply reshaping")
     parser.add_argument("--random", type=bool, default=False,
                         help="generate random or fixed train and test data (0/1)")
+    parser.add_argument("--fcl", type=int, default=100,
+                        help="nb units in dense layer")
 
 
     args = parser.parse_args()
@@ -86,6 +88,7 @@ if __name__ == '__main__':
     kl_annealtime = args.kl_annealtime
     input_shape = args.input_shape
     random = args.random == 1
+    fcl = args.fcl
 
     
     print('start loading data')    
@@ -108,14 +111,14 @@ if __name__ == '__main__':
     # conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model(latent_dim)
     input_shape = (input_shape[0], input_shape[1], 1)
     conv_vae, encoder, decoder, z_mean, z_log_sigma, encoder_inp = create_model_rigid(input_shape, filters, kernel_size,\
-         strides, latent_dim, num_layers)
+         strides, latent_dim,fcl, num_layers)
 
     conv_vae, history = build_model(encoder_inp, encoder, decoder, conv_vae,z_mean, z_log_sigma, monitor, min_delta, patience, klstart, kl_annealtime, \
     validation_split, epochs, batch_size, opt, learning_rate, early_stopping, annealing, x_train, cwd)
     
     
     print("write report")
-    generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
+    generate_report(cwd, encoder, decoder, conv_vae, filters, strides, num_layers, kernel_size, fcl, opt, learning_rate, latent_dim, epochs, batch_size, validation_split, x_train, x_test, early_stopping,\
     monitor, min_delta, patience, annealing, klstart, kl_annealtime, input_shape)
 
     print("plot results")

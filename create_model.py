@@ -45,7 +45,7 @@ def create_model_flexible(latent_dim):
 
 
 
-def create_model_rigid(input_shape, filters, kernel_size, strides, latent_dim, num_layers):
+def create_model_rigid(input_shape, filters, kernel_size, strides, latent_dim, fcl=100, num_layers=3):
 
     inputs = Input(shape=input_shape, name='encoder_input')
     x = inputs
@@ -61,7 +61,7 @@ def create_model_rigid(input_shape, filters, kernel_size, strides, latent_dim, n
 
     x = layers.GlobalAveragePooling2D()(x)    
     x = layers.Flatten()(x)
-    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dense(fcl, activation='relu')(x)
     z_mean = layers.Dense(latent_dim)(x)
     z_log_sigma = layers.Dense(latent_dim)(x)
 
